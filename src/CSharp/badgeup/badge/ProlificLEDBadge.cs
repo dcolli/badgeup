@@ -16,14 +16,15 @@
         public const byte ControlByteOne   = 0x02;          //
         public const byte ControlByteTwo   = 0x31;          //
         public const byte ControlByteThree = 0x33;          //
-        public const uint CheckSumMod      = 0x100;         //
+        public const uint CheckSumMod      = 0x100;         //256 in hex used get a 1-byte result
 
-        public const int MaxLength         = 250;           //
+        public const int MaxLength         = 250;           //Maximum message length
 
+        /// <summary>
+        /// Default Constructor - Sets the Prolific LED Badge specific COM Port Settings observed from testing/portmon
+        /// </summary>
         public ProlificLEDBadge() 
         {
-            //Set Prolific LED Badge specific COM Port Settings
-            //Settings observed from testing/portmon
             this.BaudRate = 38400;
             this.Parity = Parity.None;
             this.WordSize = 8;
@@ -107,14 +108,28 @@
         /// </summary>
         public void ClearMessages()
         {
+            //Sets the messages flag to 0000 0000 = no messages enabled
             this.EnableMessages(0x00);
         }
-
+        /// <summary>
+        /// Enables messages on the badge based on a message pattern
+        /// 0x00 = No messages
+        /// 0xFF = All messages 6 character string + 2 image
+        /// </summary>
+        /// <param name="messagePattern"></param>
         public void EnableMessages(byte messagePattern)
         {
             byte[] enablePattern = new byte[] { 0x00, ControlByteOne, ControlByteThree, messagePattern };
             this.WriteBytes(enablePattern);
         }
+        /// <summary>
+        /// Creates the message byte pattern expected by the Prolific LED Badge
+        /// </summary>
+        /// <param name="msg">A string containing the message, must be less/== 250 chars</param>
+        /// <param name="msgId">An int identifying which message this is</param>
+        /// <param name="msgStyle">A MessageStyle value (hold, snowing, etc)</param>
+        /// <param name="msgSpeed">A MessageSpeed (one through five)</param>
+        /// <returns>Message byte array</returns>
         private byte[] CreateMessageBytePattern(string msg, int msgId, MessageStyle msgStyle, MessageSpeed msgSpeed)
         {
             //Get the message offsets to use
@@ -182,7 +197,7 @@
                             ms.WriteByte((byte)msgStyle);
                             ms.WriteByte(msgLength);
                             checksum += (uint)(ControlByteTwo + (byte)offset1 + messageBatch + (byte)msgSpeed + (byte)offset2 + (byte)msgStyle + msgLength);
-                            //write data for this message
+                            //write data for this message - only 60 chars/bytes because of control bytes
                             for (int m = 0; m < 60; m++)
                             {
                                 //write message data
@@ -208,7 +223,7 @@
                             ms.WriteByte((byte)offset1);
                             ms.WriteByte(messageBatch);
                             checksum += (uint)(ControlByteTwo + (byte)offset1 + messageBatch);
-                            //write data for this message
+                            //write data for this message - 64 chars/bytes since no extra control bits
                             for (int m = 0; m < 64; m++)
                             {
                                 //write message data
@@ -233,7 +248,7 @@
                             ms.WriteByte((byte)offset1);
                             ms.WriteByte(messageBatch);
                             checksum += (uint)(ControlByteTwo + (byte)offset1 + messageBatch);
-                            //write data for this message
+                            //write data for this message - 62 chars/bytes
                             for (int m = 0; m < 62; m++)
                             {
                                 //write message data
@@ -311,14 +326,17 @@
             Five = 0x35,
             Six = 0x36
         }
-
+        /// <summary>
+        /// LEDMessage - Encapsulates an LED Message for the Prolific LED Badge
+        /// </summary>
         public class LEDMessage
         {
-            public string Message {get; set;}
-            public MessageStyle Style {get; set;}
-            public MessageSpeed Speed {get; set;}
+            public string Message {get; set;}       //message text
+            public MessageStyle Style {get; set;}   //message style - hold, snow, scrolling
+            public MessageSpeed Speed {get; set;}   //message speed - one through five (one is slow)
 
-            public static int MAXLENGTH = 250;
+            //Defaults
+            public static int MAXLENGTH = 250;  
             public static MessageStyle DEFAULTSTYLE = MessageStyle.Scrolling;
             public static MessageSpeed DEFAULTSPEED = MessageSpeed.One;
 

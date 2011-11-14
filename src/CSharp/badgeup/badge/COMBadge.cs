@@ -92,6 +92,9 @@
         public abstract void Close();
     }
 
+    /// <summary>
+    /// COMBadge Exceptions
+    /// </summary>
     public class COMBadgeNotFoundException : Exception { }
     public class COMBadgeCommunicationError : Exception
     {
