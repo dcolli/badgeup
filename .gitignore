@@ -1,3 +1,4 @@
 src/CSharp/badgeup/obj/
 src/CSharp/badgeup/bin/
 *.suo
+*.pyc
